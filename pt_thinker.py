@@ -2,8 +2,6 @@ import os
 import time
 import random
 import requests
-from kucoin.client import Market
-market = Market(url='https://api.kucoin.com')
 import sys
 import datetime
 import traceback
@@ -17,8 +15,10 @@ import psutil
 import logging
 import json
 import uuid
+from typing import List, Dict, Optional
 
-from nacl.signing import SigningKey
+# Crypto.com Exchange API Client
+CRYPTOCOM_BASE_URL = "https://api.crypto.com/exchange/v1"
 
 # -----------------------------
 # Robinhood market-data (current ASK), same source as rhcb.py trader:

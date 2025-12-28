@@ -1,0 +1,262 @@
+# PowerTrader_AI - Git Ignore File
+# Protects sensitive data from being committed
+
+# ===== API KEYS & SECRETS =====
+# CRITICAL: Never commit these files!
+crypto_key.txt
+crypto_secret.txt
+r_key.txt
+r_secret.txt
+*.key
+*.secret
+*.pem
+*.p12
+
+# ===== CONFIGURATION FILES =====
+gui_settings.json
+*.env
+.env.*
+config_local.*
+
+# ===== NEURAL DATA & OUTPUTS =====
+# Neural network training data (can be large)
+neural/
+*/neural/
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.ckpt
+
+# Generated HTML files
+*_prices.html
+low_bound_prices.html
+high_bound_prices.html
+
+# Signal files
+*_signal.txt
+*_dca_signal.txt
+
+# ===== HUB DATA DIRECTORY =====
+hub_data/
+*/hub_data/
+trader_status.json
+trade_history.jsonl
+pnl_ledger.json
+account_value_history.jsonl
+runner_ready.json
+
+# ===== PYTHON =====
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit test / coverage
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# PEP 582
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# ===== IDE / EDITORS =====
+# VS Code
+.vscode/
+*.code-workspace
+
+# PyCharm
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# ===== OPERATING SYSTEM =====
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# ===== LOGS & TEMP FILES =====
+*.log
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+logs/
+temp/
+tmp/
+
+# ===== TRADING DATA =====
+# Historical trade data (keep local only)
+trades/
+*/trades/
+backtest_results/
+*/backtest_results/
+
+# ===== BACKUPS =====
+backup/
+backups/
+*.backup
+*.bk
+
+# ===== MISC =====
+# Compressed files
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# Large data files
+*.csv
+*.xlsx
+*.db
+
+# Screenshots
+screenshots/
+*.png
+*.jpg
+*.jpeg
+*.gif
+
+# Node modules (if any JS tools used)
+node_modules/
+
+# ===== CUSTOM ADDITIONS =====
+# Add your own patterns below
+
