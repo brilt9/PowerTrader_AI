@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.1] - 2025-12-29
+
+### 🔧 **CRITICAL API FIXES APPLIED**
+
+**Fixed**:
+- ✅ **cryptocom_api.py**: Replaced with corrected implementation
+  - Fixed incorrect request format (now uses proper JSON-RPC structure)
+  - Fixed signature generation (now includes method + id + api_key + params + nonce)
+  - Added request ID counter for unique request tracking
+  - Fixed endpoint URLs (single base URL instead of different URLs per method)
+  - All numeric parameters now properly converted to strings
+  - Added client_oid to order creation for better tracking
+
+**Details**:
+- Backed up original file as `cryptocom_api_BACKUP_*.py`
+- Replaced with `cryptocom_api_CORRECTED.py` implementation
+- All authenticated endpoints should now work correctly
+- Signature validation will now pass
+- Orders will be properly formatted
+
+**Impact**:
+- Trading endpoints will now function properly
+- Account balance queries will work
+- Order history will be retrievable
+- No more 401/403 authentication errors
+
+---
+
 ## [2.0.0] - 2025-12-28
 
 ### 🔄 **MIGRATED TO CRYPTO.COM EXCHANGE API**

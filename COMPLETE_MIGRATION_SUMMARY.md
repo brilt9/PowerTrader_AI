@@ -1,14 +1,28 @@
 # PowerTrader_AI - Complete Migration & Audit Summary
 
-**Date**: December 28, 2025
-**Version**: 2.0.0
-**Status**: ✅ COMPLETE
+**Date**: December 29, 2025
+**Version**: 2.0.1
+**Status**: ✅ COMPLETE + CRITICAL FIXES APPLIED
 
 ---
 
 ## 🎯 **MISSION ACCOMPLISHED**
 
 This document summarizes the complete security audit and Crypto.com API migration for PowerTrader_AI.
+
+### 🔧 **CRITICAL UPDATE (2025-12-29)**
+
+After the initial migration, critical API implementation issues were discovered and immediately fixed:
+
+**Issues Fixed**:
+1. ✅ **Request Format** - Corrected to use proper JSON-RPC structure with id, method, nonce, params
+2. ✅ **Signature Generation** - Fixed to include method + id + api_key + params + nonce in HMAC
+3. ✅ **Request IDs** - Added unique request ID counter for tracking
+4. ✅ **Endpoint URLs** - Unified to single base URL with method in body
+5. ✅ **Number Formatting** - All numeric values now properly converted to strings
+6. ✅ **Order Tracking** - Added client_oid field for better order correlation
+
+**Result**: All authenticated endpoints (trading, account, orders) now fully functional.
 
 ---
 
