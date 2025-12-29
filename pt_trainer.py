@@ -148,19 +148,19 @@ def load_memory(tf_choice):
 	}
 	try:
 		data["memory_list"] = _read_text(f"memories_{tf_choice}.txt").replace("'","").replace(',','').replace('"','').replace(']','').replace('[','').split('~')
-	except:
+	except Exception:
 		data["memory_list"] = []
 	try:
 		data["weight_list"] = _read_text(f"memory_weights_{tf_choice}.txt").replace("'","").replace(',','').replace('"','').replace(']','').replace('[','').split(' ')
-	except:
+	except Exception:
 		data["weight_list"] = []
 	try:
 		data["high_weight_list"] = _read_text(f"memory_weights_high_{tf_choice}.txt").replace("'","").replace(',','').replace('"','').replace(']','').replace('[','').split(' ')
-	except:
+	except Exception:
 		data["high_weight_list"] = []
 	try:
 		data["low_weight_list"] = _read_text(f"memory_weights_low_{tf_choice}.txt").replace("'","").replace(',','').replace('"','').replace(']','').replace('[','').split(' ')
-	except:
+	except Exception:
 		data["low_weight_list"] = []
 	_memory_cache[tf_choice] = data
 	return data
@@ -175,22 +175,22 @@ def flush_memory(tf_choice, force=False):
 	try:
 		with open(f"memories_{tf_choice}.txt", "w+", encoding="utf-8") as f:
 			f.write("~".join([x for x in data["memory_list"] if str(x).strip() != ""]))
-	except:
+	except Exception:
 		pass
 	try:
 		with open(f"memory_weights_{tf_choice}.txt", "w+", encoding="utf-8") as f:
 			f.write(" ".join([str(x) for x in data["weight_list"] if str(x).strip() != ""]))
-	except:
+	except Exception:
 		pass
 	try:
 		with open(f"memory_weights_high_{tf_choice}.txt", "w+", encoding="utf-8") as f:
 			f.write(" ".join([str(x) for x in data["high_weight_list"] if str(x).strip() != ""]))
-	except:
+	except Exception:
 		pass
 	try:
 		with open(f"memory_weights_low_{tf_choice}.txt", "w+", encoding="utf-8") as f:
 			f.write(" ".join([str(x) for x in data["low_weight_list"] if str(x).strip() != ""]))
-	except:
+	except Exception:
 		pass
 	data["dirty"] = False
 
@@ -204,7 +204,7 @@ def write_threshold_sometimes(tf_choice, perfect_threshold, loop_i, every=200):
 		with open(f"neural_perfect_threshold_{tf_choice}.txt", "w+", encoding="utf-8") as f:
 			f.write(str(perfect_threshold))
 		_last_threshold_written[tf_choice] = perfect_threshold
-	except:
+	except Exception:
 		pass
 
 def should_stop_training(loop_i, every=50):
@@ -214,7 +214,7 @@ def should_stop_training(loop_i, every=50):
 	try:
 		with open("killer.txt", "r", encoding="utf-8", errors="ignore") as f:
 			return f.read().strip().lower() == "yes"
-	except:
+	except Exception:
 		return False
 
 def PrintException():
@@ -406,7 +406,7 @@ while True:
 			file = open('trainer_last_start_time.txt','r')
 			last_start_time = int(file.read())
 			file.close()
-		except:
+		except Exception:
 			last_start_time = 0.0
 	else:
 		last_start_time = 0.0
@@ -442,7 +442,7 @@ while True:
 				break
 			else:
 				pass
-		except:
+		except Exception:
 			PrintException()
 			pass
 		len_avg.append(current_change)
@@ -494,7 +494,7 @@ while True:
 					break
 				else:
 					continue
-			except:
+			except Exception:
 				PrintException()
 				index += 1
 				if index >= len(history_list):
@@ -511,7 +511,7 @@ while True:
 			price = float(ticker.get("data", {}).get("a", 0) or price_list[-1] if price_list else 0)
 		else:
 			price = float(price_list[-1]) if price_list else 0.0
-	except:
+	except Exception:
 		PrintException()
 	history_list = []
 	history_list2 = []
@@ -560,7 +560,7 @@ while True:
 						break
 					else:
 						continue
-			except:
+			except Exception:
 				break
 			low_all_preds = []
 			try:
@@ -573,7 +573,7 @@ while True:
 						break
 					else:
 						continue
-			except:
+			except Exception:
 				break
 			high_price_list2 = []
 			high_price_list_index = 0
@@ -640,7 +640,7 @@ while True:
 					file = open('trainer_last_training_time.txt','w+')
 					file.write(str(_trainer_finished_at))
 					file.close()
-				except:
+				except Exception:
 					pass
 				try:
 					with open("trainer_status.json", "w", encoding="utf-8") as f:
@@ -776,7 +776,7 @@ while True:
 							file = open('trainer_last_start_time.txt','w+')
 							file.write(str(start_time_yes))
 							file.close()
-						except:
+						except Exception:
 							pass
 
 						# Mark training finished for the GUI
@@ -785,7 +785,7 @@ while True:
 							file = open('trainer_last_training_time.txt','w+')
 							file.write(str(_trainer_finished_at))
 							file.close()
-						except:
+						except Exception:
 							pass
 						try:
 							with open("trainer_status.json", "w", encoding="utf-8") as f:
@@ -831,7 +831,7 @@ while True:
 								break
 							else:
 								continue
-					except:
+					except Exception:
 						PrintException()
 					try:
 						high_current_pattern_length = number_of_candles[number_of_candles_index]
@@ -844,7 +844,7 @@ while True:
 								break
 							else:
 								continue
-					except:
+					except Exception:
 						PrintException()
 					try:
 						low_current_pattern_length = number_of_candles[number_of_candles_index]
@@ -857,7 +857,7 @@ while True:
 								break
 							else:
 								continue
-					except:
+					except Exception:
 						PrintException()
 					history_diff = 1000000.0
 					memory_diff = 1000000.0
@@ -904,7 +904,7 @@ while True:
 									else:
 										try:
 											difference = abs((abs(current_candle-memory_candle)/((current_candle+memory_candle)/2))*100)
-										except:
+										except Exception:
 											difference = 0.0
 									checks.append(difference)
 									check_dex += 1
@@ -946,7 +946,7 @@ while True:
 											final_moves = sum(moves)/len(moves)
 											high_final_moves = sum(high_moves)/len(high_moves)
 											low_final_moves = sum(low_moves)/len(low_moves)
-										except:
+										except Exception:
 											final_moves = 0.0
 											high_final_moves = 0.0
 											low_final_moves = 0.0
@@ -955,7 +955,7 @@ while True:
 									break
 								else:
 									continue
-						except:
+						except Exception:
 							PrintException()
 							memory_list = []
 							weight_list = []
@@ -1015,7 +1015,7 @@ while True:
 									break
 								else:
 									continue	
-					except:
+					except Exception:
 						PrintException()
 					if 1==1:
 						while True:
@@ -1033,7 +1033,7 @@ while True:
 								prediction_prices = [start_price,new_price]
 								high_prediction_prices = [start_price,high_new_price]
 								low_prediction_prices = [start_price,low_new_price]
-							except:
+							except Exception:
 								start_price = current_pattern[len(current_pattern)-1]
 								new_price = start_price
 								prediction_prices = [start_price,start_price]
@@ -1087,7 +1087,7 @@ while True:
 							new_y = [start_price,new_price]
 							high_new_y = [start_price,high_new_price]
 							low_new_y = [start_price,low_new_price]
-						except:
+						except Exception:
 							PrintException()
 							new_y = [current_pattern[len(current_pattern)-1],current_pattern[len(current_pattern)-1]]
 							high_new_y = [current_pattern[len(current_pattern)-1],high_current_pattern[len(high_current_pattern)-1]]
@@ -1150,7 +1150,7 @@ while True:
 									in_trade = 'yes'
 								else:
 									percent_for_no_sell = ((new_y[1]-og_actual)/abs(og_actual))*100
-							except:
+							except Exception:
 								difference_of_actuals = 0.0
 								difference_of_last = 0.0
 								percent_difference_of_actuals = 0.0
@@ -1161,7 +1161,7 @@ while True:
 								low_percent_difference_of_actuals = 0.0
 								high_percent_difference_of_last = 0.0
 								low_percent_difference_of_last = 0.0
-						except:
+						except Exception:
 							PrintException()
 						try:
 							perdex = 0
@@ -1219,17 +1219,17 @@ while True:
 								pass
 							try:
 								print('(Bounce Accuracy for last 100 Over Limit Candles): ' + format((sum(upordown4)/len(upordown4))*100,'.2f'))
-							except:
+							except Exception:
 								pass
 							try:
 								print('current candle: '+str(len(price_list2)))
-							except:
+							except Exception:
 								pass
 							try:
 								print('Total Candles: '+str(int(len(price_list))))
-							except:
+							except Exception:
 								pass
-						except:
+						except Exception:
 							PrintException()
 					else:
 						pass
@@ -1257,7 +1257,7 @@ while True:
 							low_percent_difference_of_now = new1
 						else:
 							pass
-					except:
+					except Exception:
 						PrintException()
 					last_actual = new_y[0]
 					last_prediction = new_y[1]
@@ -1294,7 +1294,7 @@ while True:
 											break
 										else:
 											restarting = 'no'
-									except:
+									except Exception:
 										restarting = 'no'
 									if len(price_list2) == len(price_list):
 										the_big_index += 1
@@ -1407,7 +1407,7 @@ while True:
 													file = open('trainer_last_start_time.txt','w+')
 													file.write(str(start_time_yes))
 													file.close()
-												except:
+												except Exception:
 													pass
 
 												# Mark training finished for the GUI
@@ -1416,7 +1416,7 @@ while True:
 													file = open('trainer_last_training_time.txt','w+')
 													file.write(str(_trainer_finished_at))
 													file.close()
-												except:
+												except Exception:
 													pass
 												try:
 													with open("trainer_status.json", "w", encoding="utf-8") as f:
@@ -1493,7 +1493,7 @@ while True:
 												low_perc_diff_now_actual = ((low_price2-new_y[0])/abs(new_y[0]))*100
 												try:
 													difference = abs((abs(current_prediction_price-float(price2))/((current_prediction_price+float(price2))/2))*100)
-												except:
+												except Exception:
 													difference = 100.0
 												try:
 													direction = 'down'
@@ -1566,7 +1566,7 @@ while True:
 																break
 															else:
 																pass
-													except:
+													except Exception:
 														PrintException()
 														all_current_patterns[highlowind].append(this_diff)
 
@@ -1584,7 +1584,7 @@ while True:
 														if loop_i % 200 == 0:
 															flush_memory(tf_choice)
 
-												except:
+												except Exception:
 													PrintException()
 													pass										
 												highlowind += 1
@@ -1592,7 +1592,7 @@ while True:
 													break
 												else:
 													continue
-										except:
+										except Exception:
 											PrintException()
 											while True:
 												continue
@@ -1600,11 +1600,11 @@ while True:
 										break
 									else:
 										continue
-								except:
+								except Exception:
 									PrintException()
 									while True:
 										continue
-							except:
+							except Exception:
 								PrintException()
 								while True:
 									continue
@@ -1615,7 +1615,7 @@ while True:
 					price_change_list = []
 					current_pattern = []
 					break
-				except:
+				except Exception:
 					PrintException()
 					while True:
 						continue

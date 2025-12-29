@@ -475,7 +475,7 @@ def read_price_levels_from_html(path: str) -> List[float]:
                 # Filter obvious sentinel values used by pt_thinker for "inactive" slots
                 if v <= 0:
                     continue
-                if v >= 9e15:  # pt_thinker uses 99999999999999999
+                if v >= 9e15:  # pt_thinker uses HIGH_BOUND_SENTINEL (99999999999999999)
                     continue
 
 
