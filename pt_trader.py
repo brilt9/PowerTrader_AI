@@ -6,13 +6,10 @@ import time
 import math
 from typing import Any, Dict, Optional
 import requests
-from nacl.signing import SigningKey
 import os
 import colorama
 from colorama import Fore, Style
 import traceback
-from cryptography.hazmat.primitives.asymmetric import ed25519
-from cryptography.hazmat.primitives import serialization
 
 # -----------------------------
 # GUI HUB OUTPUTS
@@ -591,66 +588,78 @@ class CryptoAPITrading:
         self._dca_buy_ts[base] = []
 
 
-    def make_api_request(self, method: str, path: str, body: Optional[str] = "") -> Any:
-
-        timestamp = self._get_current_timestamp()
-        headers = self.get_authorization_header(method, path, body, timestamp)
-        url = self.base_url + path
-
+    def get_account(self) -> Any:
+        """Get account summary from Crypto.com."""
         try:
-            if method == "GET":
-                response = requests.get(url, headers=headers, timeout=10)
-            elif method == "POST":
-                response = requests.post(url, headers=headers, json=json.loads(body), timeout=10)
-
-            response.raise_for_status()
-            return response.json()
-        except requests.HTTPError as http_err:
-            try:
-                # Parse and return the JSON error response
-                error_response = response.json()
-                return error_response  # Return the JSON error for further handling
-            except Exception:
-                return None
-        except Exception:
+            return self.api_client.get_account_summary()
+        except Exception as e:
+            print(f"Error getting account: {e}")
             return None
 
-    def get_authorization_header(
-            self, method: str, path: str, body: str, timestamp: int
-    ) -> Dict[str, str]:
-        message_to_sign = f"{self.api_key}{timestamp}{path}{method}{body}"
-        signed = self.private_key.sign(message_to_sign.encode("utf-8"))
-
-        return {
-            "x-api-key": self.api_key,
-            "x-signature": base64.b64encode(signed.signature).decode("utf-8"),
-            "x-timestamp": str(timestamp),
-        }
-
-    def get_account(self) -> Any:
-        path = "/api/v1/crypto/trading/accounts/"
-        return self.make_api_request("GET", path)
-
     def get_holdings(self) -> Any:
-        path = "/api/v1/crypto/trading/holdings/"
-        return self.make_api_request("GET", path)
+        """Get current holdings from Crypto.com."""
+        try:
+            account_summary = self.api_client.get_account_summary()
+            if not account_summary:
+                return {"results": []}
+
+            # Convert Crypto.com format to expected format
+            accounts = account_summary.get("accounts", [])
+            results = []
+
+            for account in accounts:
+                currency = account.get("currency", "")
+                if currency and currency != "USDT":  # Skip USDT, show other holdings
+                    results.append({
+                        "asset_code": currency,
+                        "total_quantity": float(account.get("balance", 0)),
+                        "available_quantity": float(account.get("available", 0)),
+                    })
+
+            return {"results": results}
+        except Exception as e:
+            print(f"Error getting holdings: {e}")
+            return {"results": []}
 
     def get_trading_pairs(self) -> Any:
-        path = "/api/v1/crypto/trading/trading_pairs/"
-        response = self.make_api_request("GET", path)
-
-        if not response or "results" not in response:
-            return []
-
-        trading_pairs = response.get("results", [])
-        if not trading_pairs:
-            return []
-
-        return trading_pairs
+        """Get available trading pairs from Crypto.com (simplified - returns configured coins)."""
+        # Since Crypto.com doesn't have a direct equivalent, return the configured coins
+        return [f"{sym}_USDT" for sym in crypto_symbols]
 
     def get_orders(self, symbol: str) -> Any:
-        path = f"/api/v1/crypto/trading/orders/?symbol={symbol}"
-        return self.make_api_request("GET", path)
+        """Get order history for a symbol from Crypto.com."""
+        try:
+            # Convert symbol format: BTC-USD -> BTC_USDT
+            symbol_clean = symbol.split('-')[0] if '-' in symbol else symbol
+            instrument = f"{symbol_clean}_USDT"
+
+            order_history = self.api_client.get_order_history(instrument_name=instrument, page_size=100)
+            if not order_history:
+                return {"results": []}
+
+            # Convert Crypto.com format to expected format
+            orders = order_history.get("order_list", [])
+            results = []
+
+            for order in orders:
+                results.append({
+                    "id": order.get("order_id", ""),
+                    "created_at": order.get("create_time", 0),
+                    "side": order.get("side", "").lower(),
+                    "state": "filled" if order.get("status") == "FILLED" else "open",
+                    "symbol": symbol,
+                    "executions": [
+                        {
+                            "quantity": order.get("cumulative_quantity", 0),
+                            "effective_price": order.get("avg_price", 0),
+                        }
+                    ]
+                })
+
+            return {"results": results}
+        except Exception as e:
+            print(f"Error getting orders for {symbol}: {e}")
+            return {"results": []}
 
     def calculate_cost_basis(self):
         holdings = self.get_holdings()
@@ -707,21 +716,23 @@ class CryptoAPITrading:
         return cost_basis
 
     def get_price(self, symbols: list) -> Dict[str, float]:
+        """Get current buy/sell prices from Crypto.com."""
         buy_prices = {}
         sell_prices = {}
         valid_symbols = []
 
         for symbol in symbols:
-            if symbol == "USDC-USD":
+            if symbol == "USDC-USD" or symbol == "USDC_USDT":
                 continue
 
-            path = f"/api/v1/crypto/marketdata/best_bid_ask/?symbol={symbol}"
-            response = self.make_api_request("GET", path)
+            try:
+                # Convert symbol format: BTC-USD -> BTC_USDT
+                symbol_clean = symbol.split('-')[0] if '-' in symbol else symbol
+                instrument = f"{symbol_clean}_USDT"
 
-            if response and "results" in response:
-                result = response["results"][0]
-                ask = float(result["ask_inclusive_of_buy_spread"])
-                bid = float(result["bid_inclusive_of_sell_spread"])
+                # Get current ask (buy price) and bid (sell price)
+                ask = self.api_client.get_current_ask(instrument)
+                bid = self.api_client.get_current_bid(instrument)
 
                 buy_prices[symbol] = ask
                 sell_prices[symbol] = bid
@@ -732,7 +743,8 @@ class CryptoAPITrading:
                     self._last_good_bid_ask[symbol] = {"ask": ask, "bid": bid, "ts": time.time()}
                 except Exception:
                     pass
-            else:
+
+            except Exception as e:
                 # Fallback to cached bid/ask so account value never drops due to a transient miss
                 cached = None
                 try:
@@ -747,6 +759,8 @@ class CryptoAPITrading:
                         buy_prices[symbol] = ask
                         sell_prices[symbol] = bid
                         valid_symbols.append(symbol)
+                else:
+                    print(f"Error getting price for {symbol}: {e}")
 
         return buy_prices, sell_prices, valid_symbols
 
@@ -762,38 +776,41 @@ class CryptoAPITrading:
         pnl_pct: Optional[float] = None,
         tag: Optional[str] = None,
     ) -> Any:
+        """Place a buy order on Crypto.com Exchange."""
         # Fetch the current price of the asset
         current_buy_prices, current_sell_prices, valid_symbols = self.get_price([symbol])
         current_price = current_buy_prices[symbol]
         asset_quantity = amount_in_usd / current_price
 
-        max_retries = 5
+        max_retries = 3
         retries = 0
 
         while retries < max_retries:
             retries += 1
             try:
-                # Default precision to 8 decimals initially
+                # Convert symbol format: BTC-USD -> BTC_USDT
+                symbol_clean = symbol.split('-')[0] if '-' in symbol else symbol
+                instrument = f"{symbol_clean}_USDT"
+
+                # Round quantity appropriately
                 rounded_quantity = round(asset_quantity, 8)
 
-                body = {
-                    "client_order_id": client_order_id,
-                    "side": side,
-                    "type": order_type,
-                    "symbol": symbol,
-                    "market_order_config": {
-                        "asset_quantity": f"{rounded_quantity:.8f}"  # Start with 8 decimal places
-                    }
-                }
+                # Place market buy order on Crypto.com
+                response = self.api_client.create_order(
+                    instrument_name=instrument,
+                    side="BUY",
+                    type="MARKET",
+                    quantity=rounded_quantity,
+                    notional=amount_in_usd  # Use notional for market orders
+                )
 
-                path = "/api/v1/crypto/trading/orders/"
-                response = self.make_api_request("POST", path, json.dumps(body))
-                if response and "errors" not in response:
-                    # Record for GUI history (estimated fill at current_price)
+                if response:
+                    # Record for GUI history
                     try:
-                        order_id = response.get("id", None) if isinstance(response, dict) else None
+                        order_id = response.get("order_id", None) if isinstance(response, dict) else None
                     except Exception:
                         order_id = None
+
                     self._record_trade(
                         side="buy",
                         symbol=symbol,
@@ -807,22 +824,9 @@ class CryptoAPITrading:
                     return response  # Successfully placed order
 
             except Exception as e:
-                pass #print(traceback.format_exc())
-                
-
-            # Check for precision errors
-            if response and "errors" in response:
-                for error in response["errors"]:
-                    if "has too much precision" in error.get("detail", ""):
-                        # Extract required precision directly from the error message
-                        detail = error["detail"]
-                        nearest_value = detail.split("nearest ")[1].split(" ")[0]
-
-                        decimal_places = len(nearest_value.split(".")[1].rstrip("0"))
-                        asset_quantity = round(asset_quantity, decimal_places)
-                        break
-                    elif "must be greater than or equal to" in error.get("detail", ""):
-                        return None
+                print(f"Error placing buy order (attempt {retries}): {e}")
+                time.sleep(1)
+                continue
 
         return None
 
@@ -839,34 +843,38 @@ class CryptoAPITrading:
         pnl_pct: Optional[float] = None,
         tag: Optional[str] = None,
     ) -> Any:
-        body = {
-            "client_order_id": client_order_id,
-            "side": side,
-            "type": order_type,
-            "symbol": symbol,
-            "market_order_config": {
-                "asset_quantity": f"{asset_quantity:.8f}"
-            }
-        }
+        """Place a sell order on Crypto.com Exchange."""
+        try:
+            # Convert symbol format: BTC-USD -> BTC_USDT
+            symbol_clean = symbol.split('-')[0] if '-' in symbol else symbol
+            instrument = f"{symbol_clean}_USDT"
 
-        path = "/api/v1/crypto/trading/orders/"
-   
-        response = self.make_api_request("POST", path, json.dumps(body))
-
-        if response and isinstance(response, dict) and "errors" not in response:
-            order_id = response.get("id", None)
-            self._record_trade(
-                side="sell",
-                symbol=symbol,
-                qty=float(asset_quantity),
-                price=float(expected_price) if expected_price is not None else None,
-                avg_cost_basis=float(avg_cost_basis) if avg_cost_basis is not None else None,
-                pnl_pct=float(pnl_pct) if pnl_pct is not None else None,
-                tag=tag,
-                order_id=order_id,
+            # Place market sell order on Crypto.com
+            response = self.api_client.create_order(
+                instrument_name=instrument,
+                side="SELL",
+                type="MARKET",
+                quantity=asset_quantity
             )
 
-        return response
+            if response and isinstance(response, dict):
+                order_id = response.get("order_id", None)
+                self._record_trade(
+                    side="sell",
+                    symbol=symbol,
+                    qty=float(asset_quantity),
+                    price=float(expected_price) if expected_price is not None else None,
+                    avg_cost_basis=float(avg_cost_basis) if avg_cost_basis is not None else None,
+                    pnl_pct=float(pnl_pct) if pnl_pct is not None else None,
+                    tag=tag,
+                    order_id=order_id,
+                )
+
+            return response
+
+        except Exception as e:
+            print(f"Error placing sell order: {e}")
+            return None
 
 
 

@@ -1,5 +1,19 @@
-from kucoin.client import Market
-market = Market(url='https://api.kucoin.com')
+# Crypto.com Exchange API Client
+import os
+import sys
+
+# Import Crypto.com API wrapper
+_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+if _BASE_DIR not in sys.path:
+    sys.path.insert(0, _BASE_DIR)
+
+try:
+    from cryptocom_api import get_klines_compat
+except ImportError:
+    print("Warning: cryptocom_api not found. Please ensure cryptocom_api.py is in the same directory.")
+    def get_klines_compat(symbol, timeframe, **kwargs):
+        raise RuntimeError("Crypto.com API wrapper not available")
+
 import time
 """
 <------------
@@ -400,7 +414,10 @@ while True:
 	while True:
 		time.sleep(.5)
 		try:
-			history = str(market.get_kline(coin_choice,timeframe,startAt=end_time,endAt=start_time)).replace(']]','], ').replace('[[','[').split('], [')
+			# Use Crypto.com API (compatible format with KuCoin)
+			# coin_choice is like "BTC-USDT", convert to "BTC" for Crypto.com
+			symbol_clean = coin_choice.split('-')[0] if '-' in coin_choice else coin_choice
+			history = str(get_klines_compat(symbol_clean, timeframe)).replace(']]','], ').replace('[[','[').split('], [')
 		except Exception as e:
 			PrintException()
 			time.sleep(3.5)
