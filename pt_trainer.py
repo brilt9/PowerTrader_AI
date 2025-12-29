@@ -8,11 +8,13 @@ if _BASE_DIR not in sys.path:
     sys.path.insert(0, _BASE_DIR)
 
 try:
-    from cryptocom_api import get_klines_compat
+    from cryptocom_api import get_klines_compat, CryptocomExchangeAPI
+    _crypto_api_client = CryptocomExchangeAPI()
 except ImportError:
     print("Warning: cryptocom_api not found. Please ensure cryptocom_api.py is in the same directory.")
     def get_klines_compat(symbol, timeframe, **kwargs):
         raise RuntimeError("Crypto.com API wrapper not available")
+    _crypto_api_client = None
 
 import time
 """
@@ -503,8 +505,12 @@ while True:
 		price_list.reverse()
 		high_price_list.reverse()
 		low_price_list.reverse()
-		ticker_data = str(market.get_ticker(coin_choice)).replace('"','').replace("'","").replace("[","").replace("{","").replace("]","").replace("}","").replace(",","").lower().split(' ')
-		price = float(ticker_data[ticker_data.index('price:')+1])
+		# Get current price from Crypto.com API
+		if _crypto_api_client:
+			ticker = _crypto_api_client.get_ticker(f"{coin_choice}_USDT")
+			price = float(ticker.get("data", {}).get("a", 0) or price_list[-1] if price_list else 0)
+		else:
+			price = float(price_list[-1]) if price_list else 0.0
 	except:
 		PrintException()
 	history_list = []
@@ -654,8 +660,7 @@ while True:
 				# Flush any cached memory/weights before we spin
 				flush_memory(tf_choice, force=True)
 
-				while True:
-					continue
+				# Continue to next training iteration (fixed: removed infinite loop)
 				the_big_index += 1
 				restarted_yet = 0
 				avg50 = []
