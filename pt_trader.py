@@ -589,9 +589,29 @@ class CryptoAPITrading:
 
 
     def get_account(self) -> Any:
-        """Get account summary from Crypto.com."""
+        """Get account summary from Crypto.com.
+
+        Returns a dict with 'buying_power' calculated from USDT available balance,
+        plus the raw 'accounts' data from Crypto.com API.
+        """
         try:
-            return self.api_client.get_account_summary()
+            account_summary = self.api_client.get_account_summary()
+            if not account_summary:
+                return None
+
+            # Calculate buying_power from USDT available balance
+            buying_power = 0.0
+            accounts = account_summary.get("accounts", [])
+            for acc in accounts:
+                currency = str(acc.get("currency", "")).upper()
+                if currency == "USDT":
+                    buying_power = float(acc.get("available", 0))
+                    break
+
+            # Return account data with buying_power included for compatibility
+            result = dict(account_summary)
+            result["buying_power"] = buying_power
+            return result
         except Exception as e:
             print(f"Error getting account: {e}")
             return None

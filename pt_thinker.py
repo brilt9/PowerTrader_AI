@@ -17,6 +17,12 @@ import json
 import uuid
 from typing import List, Dict, Optional
 
+# ===== CONSTANTS =====
+# Sentinel value for "no high bound price" / inactive level
+HIGH_BOUND_SENTINEL = 99999999999999999
+# Sentinel value for "no low bound price" / inactive level
+LOW_BOUND_SENTINEL = 0.01
+
 # Crypto.com Exchange API Client
 CRYPTOCOM_BASE_URL = "https://api.crypto.com/exchange/v1"
 
@@ -274,7 +280,7 @@ tf_choices = ['1hour', '2hour', '4hour', '8hour', '12hour', '1day', '1week']
 def new_coin_state():
 	return {
 		'low_bound_prices': [.01] * len(tf_choices),
-		'high_bound_prices': [99999999999999999] * len(tf_choices),
+		'high_bound_prices': [HIGH_BOUND_SENTINEL] * len(tf_choices),
 
 		'tf_times': [],
 		'tf_choice_index': 0,
@@ -284,7 +290,7 @@ def new_coin_state():
 		'last_messages': ['none'] * len(tf_choices),
 		'margins': [0.25] * len(tf_choices),
 
-		'high_tf_prices': [99999999999999999] * len(tf_choices),
+		'high_tf_prices': [HIGH_BOUND_SENTINEL] * len(tf_choices),
 		'low_tf_prices': [.01] * len(tf_choices),
 
 		'tf_sides': ['none'] * len(tf_choices),
@@ -303,7 +309,7 @@ states = {}
 
 display_cache = {sym: f"{sym}  (starting.)" for sym in CURRENT_COINS}
 
-# Track which coins have produced REAL predicted levels (not placeholder 1 / 99999999999999999)
+# Track which coins have produced REAL predicted levels (not placeholder 1 / HIGH_BOUND_SENTINEL)
 _ready_coins = set()
 
 # We consider the runner "READY" only once it is ACTUALLY PRINTING real prediction messages
@@ -449,34 +455,6 @@ buy_coins = []
 cc_update = 'yes'
 wr_update = 'yes'
 
-def find_purple_area(lines):
-    """
-    Given a list of (price, color) pairs (color is 'orange' or 'blue'),
-    returns (purple_bottom, purple_top) if a purple area exists,
-    else (None, None).
-    """
-    oranges = sorted([price for price, color in lines if color == 'orange'], reverse=True)
-    blues   = sorted([price for price, color in lines if color == 'blue'])
-    if not oranges or not blues:
-        return (None, None)
-    purple_bottom = None
-    purple_top = None
-    all_levels = sorted(set(oranges + blues + [float('-inf'), float('inf')]), reverse=True)
-    for i in range(len(all_levels) - 1):
-        top = all_levels[i]
-        bottom = all_levels[i+1]
-        oranges_below = [o for o in oranges if o < bottom]
-        blues_above = [b for b in blues if b > top]
-        has_orange_below = any(o < top for o in oranges)
-        has_blue_above = any(b > bottom for b in blues)
-        if has_orange_below and has_blue_above:
-            if purple_bottom is None or bottom < purple_bottom:
-                purple_bottom = bottom
-            if purple_top is None or top > purple_top:
-                purple_top = top
-    if purple_bottom is not None and purple_top is not None and purple_top > purple_bottom:
-        return (purple_bottom, purple_top)
-    return (None, None)
 def step_coin(sym: str):
 	# run inside the coin folder so all existing file reads/writes stay relative + isolated
 	os.chdir(coin_folder(sym))
@@ -630,7 +608,7 @@ def step_coin(sym: str):
 			else:
 				try:
 					difference = abs((abs(current_candle - memory_candle) / ((current_candle + memory_candle) / 2)) * 100)
-				except:
+				except (ZeroDivisionError, ValueError, TypeError):
 					difference = 0.0
 
 			diff_avg = difference
@@ -674,7 +652,7 @@ def step_coin(sym: str):
 						low_final_moves = sum(low_moves) / len(low_moves)
 						del perfects[tf_choice_index]
 						perfects.insert(tf_choice_index, 'active')
-					except:
+					except (ZeroDivisionError, ValueError, TypeError, IndexError):
 						final_moves = 0.0
 						high_final_moves = 0.0
 						low_final_moves = 0.0
@@ -708,7 +686,7 @@ def step_coin(sym: str):
 		start_price = current_pattern[len(current_pattern) - 1]
 		high_new_price = start_price + (start_price * high_diff)
 		low_new_price = start_price + (start_price * low_diff)
-	except:
+	except Exception:
 		start_price = current_pattern[len(current_pattern) - 1]
 		high_new_price = start_price
 		low_new_price = start_price
@@ -760,7 +738,7 @@ def step_coin(sym: str):
 
 		# bounds: use your fake numbers when TF inactive / missing
 		low_bound_prices = _pad_to_len(low_bound_prices, n_tfs, .01)
-		high_bound_prices = _pad_to_len(high_bound_prices, n_tfs, 99999999999999999)
+		high_bound_prices = _pad_to_len(high_bound_prices, n_tfs, HIGH_BOUND_SENTINEL)
 
 		# predicted prices: keep equal when missing so it never triggers LONG/SHORT
 		high_tf_prices = _pad_to_len(high_tf_prices, n_tfs, current)
@@ -889,7 +867,7 @@ def step_coin(sym: str):
 				high_bound_prices.append(new_high_price)
 			else:
 				low_bound_prices.append(.01)
-				high_bound_prices.append(99999999999999999)
+				high_bound_prices.append(HIGH_BOUND_SENTINEL)
 
 			prices_index += 1
 			if prices_index >= len(high_tf_prices):
@@ -912,16 +890,16 @@ def step_coin(sym: str):
 		og_index = 0
 		gap_modifier = 0.0
 		while True:
-			if new_low_bound_prices[og_index] == .01 or new_low_bound_prices[og_index + 1] == .01 or new_high_bound_prices[og_index] == 99999999999999999 or new_high_bound_prices[og_index + 1] == 99999999999999999:
+			if new_low_bound_prices[og_index] == .01 or new_low_bound_prices[og_index + 1] == .01 or new_high_bound_prices[og_index] == HIGH_BOUND_SENTINEL or new_high_bound_prices[og_index + 1] == HIGH_BOUND_SENTINEL:
 				pass
 			else:
 				try:
 					low_perc_diff = (abs(new_low_bound_prices[og_index] - new_low_bound_prices[og_index + 1]) / ((new_low_bound_prices[og_index] + new_low_bound_prices[og_index + 1]) / 2)) * 100
-				except:
+				except (ZeroDivisionError, ValueError, TypeError):
 					low_perc_diff = 0.0
 				try:
 					high_perc_diff = (abs(new_high_bound_prices[og_index] - new_high_bound_prices[og_index + 1]) / ((new_high_bound_prices[og_index] + new_high_bound_prices[og_index + 1]) / 2)) * 100
-				except:
+				except (ZeroDivisionError, ValueError, TypeError):
 					high_perc_diff = 0.0
 
 				if low_perc_diff < 0.25 + gap_modifier or new_low_bound_prices[og_index + 1] > new_low_bound_prices[og_index]:
@@ -947,11 +925,11 @@ def step_coin(sym: str):
 		while True:
 			try:
 				low_bound_prices.append(new_low_bound_prices[og_low_index_list.index(og_index)])
-			except:
+			except (ValueError, IndexError):
 				pass
 			try:
 				high_bound_prices.append(new_high_bound_prices[og_high_index_list.index(og_index)])
-			except:
+			except (ValueError, IndexError):
 				pass
 			og_index += 1
 			if og_index >= len(new_low_bound_prices):
@@ -993,7 +971,7 @@ def step_coin(sym: str):
 				total_coins=len(COIN_SYMBOLS),
 			)
 
-		except:
+		except Exception:
 			PrintException()
 
 
@@ -1010,7 +988,7 @@ def step_coin(sym: str):
 				pm = sum(current_pms) / len(current_pms)
 				if pm < 0.25:
 					pm = 0.25
-			except:
+			except (ZeroDivisionError, ValueError, TypeError):
 				pm = 0.25
 
 			with open('futures_long_profit_margin.txt', 'w+') as f:
@@ -1024,7 +1002,7 @@ def step_coin(sym: str):
 				pm = sum(current_pms) / len(current_pms)
 				if pm < 0.25:
 					pm = 0.25
-			except:
+			except (ZeroDivisionError, ValueError, TypeError):
 				pm = 0.25
 
 			with open('futures_short_profit_margin.txt', 'w+') as f:
@@ -1032,7 +1010,7 @@ def step_coin(sym: str):
 			with open('short_dca_signal.txt', 'w+') as f:
 				f.write(str(shorts))
 
-		except:
+		except Exception:
 			PrintException()
 
 		# ====== NON-BLOCKING candle update check (single pass) ======
