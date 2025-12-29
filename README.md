@@ -1,19 +1,15 @@
 # PowerTrader_AI
 Fully automated crypto trading powered by a custom price prediction AI and a structured/tiered DCA system.
 
-## 🔄 **MIGRATED TO CRYPTO.COM EXCHANGE API**
+## 🔄 **CRYPTO.COM EXCHANGE API**
 
-**This version has been updated to use Crypto.com Exchange API** for both market data and trading.
+**This version uses the Crypto.com Exchange API** for both market data and trading.
 
-✅ **Security Audit Complete**: No malware, viruses, or security issues found
-📊 **Security Score**: 8.5/10 - Safe to use
-📚 **See**: `CRYPTO_COM_MIGRATION_GUIDE.md` for full details
+📚 **See**: `CRYPTO_COM_MIGRATION_GUIDE.md` for full API details
 
 # Setup & First-Time Use (Windows)
 
 THESE INSTRUCTIONS WERE WRITTEN BY AI! PLEASE LET ME KNOW IF THERE ARE ANY ERRORS OR ISSUES WITH THIS SETUP PROCESS!
-
-If you have any crypto holdings in Robinhood currently, either transfer them out of your Robinhood account or sell them to dollars BEFORE going through this setup process!
 
 This page walks you through installing PowerTrader AI from start to finish, in the exact order a first-time user should do it.  
 No coding knowledge needed.  
