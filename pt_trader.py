@@ -151,25 +151,32 @@ def _refresh_paths_and_symbols():
 	base_paths = _build_base_paths(main_dir, crypto_symbols)
 
 
-#API STUFF
+# API STUFF - Crypto.com Exchange
 API_KEY = ""
-BASE64_PRIVATE_KEY = ""
+API_SECRET = ""
 
 try:
-    with open('r_key.txt', 'r', encoding='utf-8') as f:
+    with open('crypto_key.txt', 'r', encoding='utf-8') as f:
         API_KEY = (f.read() or "").strip()
-    with open('r_secret.txt', 'r', encoding='utf-8') as f:
-        BASE64_PRIVATE_KEY = (f.read() or "").strip()
+    with open('crypto_secret.txt', 'r', encoding='utf-8') as f:
+        API_SECRET = (f.read() or "").strip()
 except Exception:
     API_KEY = ""
-    BASE64_PRIVATE_KEY = ""
+    API_SECRET = ""
 
-if not API_KEY or not BASE64_PRIVATE_KEY:
+if not API_KEY or not API_SECRET:
     print(
-        "\n[PowerTrader] Robinhood API credentials not found.\n"
-        "Open the GUI and go to Settings → Robinhood API → Setup / Update.\n"
-        "That wizard will generate your keypair, tell you where to paste the public key on Robinhood,\n"
-        "and will save r_key.txt + r_secret.txt so this trader can authenticate.\n"
+        "\n[PowerTrader] Crypto.com Exchange API credentials not found.\n"
+        "Please create two files:\n"
+        "  - crypto_key.txt (your API key)\n"
+        "  - crypto_secret.txt (your secret key)\n"
+        "\n"
+        "Get your API keys from: https://crypto.com/exchange\n"
+        "  1. Go to Settings → API Keys\n"
+        "  2. Create new API key with 'Read' and 'Trade' permissions\n"
+        "  3. Save the keys in the files above\n"
+        "\n"
+        "For more details, see: CRYPTO_COM_MIGRATION_GUIDE.md\n"
     )
     raise SystemExit(1)
 
@@ -178,10 +185,20 @@ class CryptoAPITrading:
         # keep a copy of the folder map (same idea as trader.py)
         self.path_map = dict(base_paths)
 
+        # Initialize Crypto.com API client
+        try:
+            import sys
+            project_dir = os.path.dirname(os.path.abspath(__file__))
+            if project_dir not in sys.path:
+                sys.path.insert(0, project_dir)
+            from cryptocom_api import CryptocomExchangeAPI
+            self.api_client = CryptocomExchangeAPI(api_key=API_KEY, api_secret=API_SECRET)
+        except Exception as e:
+            print(f"Failed to initialize Crypto.com API client: {e}")
+            raise SystemExit(1)
+
         self.api_key = API_KEY
-        private_key_seed = base64.b64decode(BASE64_PRIVATE_KEY)
-        self.private_key = SigningKey(private_key_seed)
-        self.base_url = "https://trading.robinhood.com"
+        self.api_secret = API_SECRET
 
         self.dca_levels_triggered = {}  # Track DCA levels for each crypto
         self.dca_levels = [-2.5, -5.0, -10.0, -20.0, -30.0, -40.0, -50.0]  # Moved to instance variable
