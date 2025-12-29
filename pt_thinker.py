@@ -19,7 +19,7 @@ from typing import List, Dict, Optional
 
 # ===== CONSTANTS =====
 # Sentinel value for "no high bound price" / inactive level
-HIGH_BOUND_SENTINEL = HIGH_BOUND_SENTINEL
+HIGH_BOUND_SENTINEL = 99999999999999999
 # Sentinel value for "no low bound price" / inactive level
 LOW_BOUND_SENTINEL = 0.01
 
