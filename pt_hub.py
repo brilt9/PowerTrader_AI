@@ -517,26 +517,26 @@ def read_short_signal(folder: str) -> int:
 
 
 # -----------------------------
-# Candle fetching (KuCoin)
+# Candle fetching (Crypto.com Exchange)
 # -----------------------------
 
 class CandleFetcher:
     """
-    Uses kucoin-python if available; otherwise falls back to KuCoin REST via requests.
+    Fetches candlestick data from Crypto.com Exchange API.
+    Compatible with the previous KuCoin format for backward compatibility.
     """
     def __init__(self):
-        self._mode = "kucoin_client"
-        self._market = None
+        # Import our Crypto.com API wrapper
         try:
-            from kucoin.client import Market  # type: ignore
-            self._market = Market(url="https://api.kucoin.com")
-        except Exception:
-            self._mode = "rest"
-            self._market = None
-
-        if self._mode == "rest":
-            import requests  # local import
-            self._requests = requests
+            import sys
+            project_dir = os.path.dirname(os.path.abspath(__file__))
+            if project_dir not in sys.path:
+                sys.path.insert(0, project_dir)
+            from cryptocom_api import CryptocomExchangeAPI
+            self._client = CryptocomExchangeAPI()
+        except Exception as e:
+            print(f"Warning: Failed to initialize Crypto.com API client: {e}")
+            self._client = None
 
         # Small in-memory cache to keep timeframe switching snappy.
         # key: (pair, timeframe, limit) -> (saved_time_epoch, candles)
@@ -549,10 +549,12 @@ class CandleFetcher:
         Returns candles oldest->newest as:
           [{"ts": int, "open": float, "high": float, "low": float, "close": float}, ...]
         """
-        symbol = symbol.upper().strip()
+        if not self._client:
+            return []
 
-        # Your neural uses USDT pairs on KuCoin (ex: BTC-USDT)
-        pair = f"{symbol}-USDT"
+        symbol = symbol.upper().strip()
+        # Crypto.com uses USDT pairs (ex: BTC_USDT)
+        pair = f"{symbol}_USDT"
         limit = int(limit or 0)
 
         now = time.time()
@@ -561,61 +563,37 @@ class CandleFetcher:
         if cached and (now - float(cached[0])) <= float(self._cache_ttl_seconds):
             return cached[1]
 
-        # rough window (timeframe-dependent) so we get enough candles
-        tf_seconds = {
-            "1min": 60, "5min": 300, "15min": 900, "30min": 1800,
-            "1hour": 3600, "2hour": 7200, "4hour": 14400, "8hour": 28800, "12hour": 43200,
-            "1day": 86400, "1week": 604800
-        }.get(timeframe, 3600)
-
-        end_at = int(now)
-        start_at = end_at - (tf_seconds * max(200, (limit + 50) if limit else 250))
-
-        if self._mode == "kucoin_client" and self._market is not None:
-            try:
-                # IMPORTANT: limit the server response by passing startAt/endAt.
-                # This avoids downloading a huge default kline set every switch.
-                try:
-                    raw = self._market.get_kline(pair, timeframe, startAt=start_at, endAt=end_at)  # type: ignore
-                except Exception:
-                    # fallback if that client version doesn't accept kwargs
-                    raw = self._market.get_kline(pair, timeframe)  # returns newest->oldest
-
-                candles: List[dict] = []
-                for row in raw:
-                    # KuCoin kline row format:
-                    # [time, open, close, high, low, volume, turnover]
-                    ts = int(float(row[0]))
-                    o = float(row[1]); c = float(row[2]); h = float(row[3]); l = float(row[4])
-                    candles.append({"ts": ts, "open": o, "high": h, "low": l, "close": c})
-                candles.sort(key=lambda x: x["ts"])
-                if limit and len(candles) > limit:
-                    candles = candles[-limit:]
-
-                self._cache[cache_key] = (now, candles)
-                return candles
-            except Exception:
-                return []
-
-        # REST fallback
         try:
-            url = "https://api.kucoin.com/api/v1/market/candles"
-            params = {"symbol": pair, "type": timeframe, "startAt": start_at, "endAt": end_at}
-            resp = self._requests.get(url, params=params, timeout=10)
-            j = resp.json()
-            data = j.get("data", [])  # newest->oldest
+            # Get candlestick data from Crypto.com
+            data = self._client.get_candlestick(pair, timeframe, count=min(limit or 300, 300))
+
             candles: List[dict] = []
-            for row in data:
-                ts = int(float(row[0]))
-                o = float(row[1]); c = float(row[2]); h = float(row[3]); l = float(row[4])
+            for candle in data:
+                # Crypto.com format: {"t": timestamp_ms, "o": open, "h": high, "l": low, "c": close, "v": volume}
+                ts = int(candle.get("t", 0))
+                # Convert milliseconds to seconds for consistency
+                if ts > 1e12:  # If timestamp is in milliseconds
+                    ts = ts // 1000
+
+                o = float(candle.get("o", 0))
+                h = float(candle.get("h", 0))
+                l = float(candle.get("l", 0))
+                c = float(candle.get("c", 0))
+
                 candles.append({"ts": ts, "open": o, "high": h, "low": l, "close": c})
+
+            # Sort by timestamp (oldest to newest)
             candles.sort(key=lambda x: x["ts"])
+
+            # Limit results if needed
             if limit and len(candles) > limit:
                 candles = candles[-limit:]
 
             self._cache[cache_key] = (now, candles)
             return candles
-        except Exception:
+
+        except Exception as e:
+            print(f"Error fetching candles for {pair}: {e}")
             return []
 
 

@@ -4,4 +4,6 @@ matplotlib
 colorama
 cryptography
 PyNaCl
-kucoin-python
+cryptocom-exchange>=0.15.0
+aiohttp
+websockets
