@@ -77,7 +77,13 @@ In the Hub, open **Settings** and do this in order:
    - Navigate to **Settings** → **API Keys**
    - Click **+ Create API Key**
    - Set permissions: **Read** ✓ and **Trade** ✓
+   - **Whitelist your IP address** (REQUIRED - see below)
    - Save the **API Key** and **Secret Key** securely
+
+4. **Whitelist Your IP Address** (REQUIRED):
+   - Go to https://www.whatismyip.com to find your IP
+   - Add your IP to the API key's whitelist in Crypto.com Exchange
+   - 📖 See [IP_WHITELIST_GUIDE.md](IP_WHITELIST_GUIDE.md) for detailed instructions
 
 ### Configure PowerTrader AI
 
