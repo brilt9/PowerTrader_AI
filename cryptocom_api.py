@@ -107,7 +107,8 @@ class CryptocomExchangeAPI:
         Raises:
             RuntimeError: If request fails or API returns error
         """
-        url = self.base_url  # Just base URL, method goes in JSON body
+        # Build full URL with method path (REST style)
+        url = f"{self.base_url}/{method}"
 
         if params is None:
             params = {}
