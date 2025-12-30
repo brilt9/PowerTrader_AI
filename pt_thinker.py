@@ -963,12 +963,12 @@ def step_coin(sym: str):
 
 
 
-			all_ready = len(_ready_coins) >= len(COIN_SYMBOLS)
+			all_ready = len(_ready_coins) >= len(CURRENT_COINS)
 			_write_runner_ready(
 				all_ready,
 				stage=("real_predictions" if all_ready else "warming_up"),
 				ready_coins=sorted(list(_ready_coins)),
-				total_coins=len(COIN_SYMBOLS),
+				total_coins=len(CURRENT_COINS),
 			)
 
 		except Exception:
@@ -982,7 +982,7 @@ def step_coin(sym: str):
 			longs = tf_sides.count('long')
 			shorts = tf_sides.count('short')
 
-			# long pm
+			# Calculate profit margin once (used for both long and short)
 			current_pms = [m for m in margins if m != 0]
 			try:
 				pm = sum(current_pms) / len(current_pms)
@@ -991,20 +991,13 @@ def step_coin(sym: str):
 			except (ZeroDivisionError, ValueError, TypeError):
 				pm = 0.25
 
+			# long pm
 			with open('futures_long_profit_margin.txt', 'w+') as f:
 				f.write(str(pm))
 			with open('long_dca_signal.txt', 'w+') as f:
 				f.write(str(longs))
 
-			# short pm
-			current_pms = [m for m in margins if m != 0]
-			try:
-				pm = sum(current_pms) / len(current_pms)
-				if pm < 0.25:
-					pm = 0.25
-			except (ZeroDivisionError, ValueError, TypeError):
-				pm = 0.25
-
+			# short pm (same calculation as long)
 			with open('futures_short_profit_margin.txt', 'w+') as f:
 				f.write(str(abs(pm)))
 			with open('short_dca_signal.txt', 'w+') as f:

@@ -847,8 +847,10 @@ class CandleChart(ttk.Frame):
             y_low = min(float(c["low"]) for c in candles)
             y_high = max(float(c["high"]) for c in candles)
             pad = (y_high - y_low) * 0.03
+            # Ensure pad is always a positive, non-zero, finite value
             if not math.isfinite(pad) or pad <= 0:
-                pad = max(abs(y_low) * 0.001, 1e-6)
+                # Use a percentage of y_low as fallback, or minimum 1e-6
+                pad = max(abs(y_low) * 0.001, abs(y_high) * 0.001, 1e-6)
             self.ax.set_ylim(y_low - pad, y_high + pad)
         except Exception:
             pass
@@ -983,6 +985,10 @@ class CandleChart(ttk.Frame):
                     except Exception:
                         continue
                     if tts < t_min or tts > t_max:
+                        continue
+
+                    # Check if candle_ts is empty to avoid index errors
+                    if not candle_ts:
                         continue
 
                     i = bisect.bisect_left(candle_ts, tts)
@@ -1330,6 +1336,10 @@ class AccountValueChart(ttk.Frame):
                     except Exception:
                         continue
                     if tts < t_min or tts > t_max:
+                        continue
+
+                    # Check if ts_list is empty to avoid index errors
+                    if not ts_list:
                         continue
 
                     # nearest account-value point
@@ -3624,9 +3634,12 @@ class PowerTraderHub(tk.Tk):
                     alloc_spread = 0.5
 
                 required = alloc_spread * n  # initial buys for all coins
-                while required > 0.0 and (required * 3.0) <= (total_val + 1e-9):
+                max_iterations = 20  # Safety limit to prevent infinite loops
+                iterations = 0
+                while required > 0.0 and (required * 3.0) <= (total_val + 1e-9) and iterations < max_iterations:
                     required *= 3.0
                     spread_levels += 1
+                    iterations += 1
 
                 # All DCA into a single coin
                 alloc_single = total_val * 0.00005
@@ -3634,9 +3647,12 @@ class PowerTraderHub(tk.Tk):
                     alloc_single = 0.5
 
                 required = alloc_single  # initial buy for one coin
-                while required > 0.0 and (required * 3.0) <= (total_val + 1e-9):
+                max_iterations = 20  # Safety limit to prevent infinite loops
+                iterations = 0
+                while required > 0.0 and (required * 3.0) <= (total_val + 1e-9) and iterations < max_iterations:
                     required *= 3.0
                     single_levels += 1
+                    iterations += 1
 
             # Show labels + number (one line each)
             self.lbl_acct_dca_spread.config(text=f"DCA Levels (spread): {spread_levels}")
@@ -4656,9 +4672,25 @@ class PowerTraderHub(tk.Tk):
                 self.settings["script_neural_trainer"] = trainer_script_var.get().strip()
                 self.settings["script_trader"] = trader_script_var.get().strip()
 
-                self.settings["ui_refresh_seconds"] = float(ui_refresh_var.get().strip())
-                self.settings["chart_refresh_seconds"] = float(chart_refresh_var.get().strip())
-                self.settings["candles_limit"] = int(float(candles_limit_var.get().strip()))
+                # Validate and set UI refresh rate (minimum 0.1 seconds)
+                ui_refresh = float(ui_refresh_var.get().strip())
+                if ui_refresh <= 0:
+                    ui_refresh = 0.1
+                self.settings["ui_refresh_seconds"] = ui_refresh
+
+                # Validate and set chart refresh rate (minimum 0.1 seconds)
+                chart_refresh = float(chart_refresh_var.get().strip())
+                if chart_refresh <= 0:
+                    chart_refresh = 0.1
+                self.settings["chart_refresh_seconds"] = chart_refresh
+
+                # Validate and set candles limit (minimum 10, maximum 10000)
+                candles_limit = int(float(candles_limit_var.get().strip()))
+                if candles_limit < 10:
+                    candles_limit = 10
+                elif candles_limit > 10000:
+                    candles_limit = 10000
+                self.settings["candles_limit"] = candles_limit
                 self.settings["auto_start_scripts"] = bool(auto_start_var.get())
                 self._save_settings()
 
