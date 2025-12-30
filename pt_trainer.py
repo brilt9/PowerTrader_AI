@@ -425,13 +425,9 @@ while True:
 			time.sleep(3.5)
 			continue
 		index = 0
-		while True:
+		while index < len(history):
 			history_list.append(history[index])
 			index += 1
-			if index >= len(history):
-				break
-			else:
-				continue
 		perc_comp = format((len(history_list)/how_far_to_look_back)*100,'.2f')
 		print('gathering history')
 		current_change = len(history_list)-list_len	
@@ -472,7 +468,7 @@ while True:
 	volume_list = []
 	minutes_passed = 0
 	try:
-		while True:
+		while index < len(history_list):
 			working_minute = str(history_list[index]).replace('"','').replace("'","").split(", ")
 			try:
 				if index == 1:
@@ -481,7 +477,7 @@ while True:
 				else:
 					pass
 				candle_time = float(working_minute[0].replace('[',''))
-				openPrice = float(working_minute[1])                
+				openPrice = float(working_minute[1])
 				closePrice = float(working_minute[2])
 				highPrice = float(working_minute[3])
 				lowPrice = float(working_minute[4])
@@ -490,24 +486,18 @@ while True:
 				high_price_list.append(highPrice)
 				low_price_list.append(lowPrice)
 				index += 1
-				if index >= len(history_list):
-					break
-				else:
-					continue
 			except Exception:
 				PrintException()
 				index += 1
-				if index >= len(history_list):
-					break
-				else:
-					continue
 		open_price_list.reverse()
 		price_list.reverse()
 		high_price_list.reverse()
 		low_price_list.reverse()
 		# Get current price from Crypto.com API
 		if _crypto_api_client:
-			ticker = _crypto_api_client.get_ticker(f"{coin_choice}_USDT")
+			# Extract base symbol from coin_choice (e.g., "BTC-USDT" -> "BTC")
+			base_symbol = coin_choice.split('-')[0] if '-' in coin_choice else coin_choice
+			ticker = _crypto_api_client.get_ticker(f"{base_symbol}_USDT")
 			price = float(ticker.get("data", {}).get("a", 0) or price_list[-1] if price_list else 0)
 		else:
 			price = float(price_list[-1]) if price_list else 0.0
@@ -597,7 +587,10 @@ while True:
 			index2 = index+1
 			price_change_list = []
 			while True:
-				price_change = 100*((price_list2[index]-open_price_list2[index])/open_price_list2[index])
+				if open_price_list2[index] != 0:
+					price_change = 100*((price_list2[index]-open_price_list2[index])/open_price_list2[index])
+				else:
+					price_change = 0.0
 				price_change_list.append(price_change)
 				index += 1
 				if index >= len(price_list2):
@@ -608,7 +601,10 @@ while True:
 			index2 = index+1
 			high_price_change_list = []
 			while True:
-				high_price_change = 100*((high_price_list2[index]-open_price_list2[index])/open_price_list2[index])
+				if open_price_list2[index] != 0:
+					high_price_change = 100*((high_price_list2[index]-open_price_list2[index])/open_price_list2[index])
+				else:
+					high_price_change = 0.0
 				high_price_change_list.append(high_price_change)
 				index += 1
 				if index >= len(price_list2):
@@ -619,7 +615,10 @@ while True:
 			index2 = index+1
 			low_price_change_list = []
 			while True:
-				low_price_change = 100*((low_price_list2[index]-open_price_list2[index])/open_price_list2[index])
+				if open_price_list2[index] != 0:
+					low_price_change = 100*((low_price_list2[index]-open_price_list2[index])/open_price_list2[index])
+				else:
+					low_price_change = 0.0
 				low_price_change_list.append(low_price_change)
 				index += 1
 				if index >= len(price_list2):
@@ -912,7 +911,10 @@ while True:
 										break
 									else:
 										continue
-								diff_avg = sum(checks)/len(checks)
+								if len(checks) > 0:
+									diff_avg = sum(checks)/len(checks)
+								else:
+									diff_avg = 0.0
 								if diff_avg <= perfect_threshold:
 									any_perfect = 'yes'
 									high_diff = float(memory_list[mem_ind].split('{}')[1].replace("'","").replace(',','').replace('"','').replace(']','').replace('[','').replace(' ',''))/100
@@ -1473,12 +1475,22 @@ while True:
 											high_price2 = high_price_list2[len(high_price_list2)-1]
 											low_price2 = low_price_list2[len(low_price_list2)-1]
 											highlowind = 0
-											this_differ = ((price2-new_y[1])/abs(new_y[1]))*100
-											high_this_differ = ((high_price2-new_y[1])/abs(new_y[1]))*100
-											low_this_differ = ((low_price2-new_y[1])/abs(new_y[1]))*100
-											this_diff = ((price2-new_y[0])/abs(new_y[0]))*100
-											high_this_diff = ((high_price2-new_y[0])/abs(new_y[0]))*100
-											low_this_diff = ((low_price2-new_y[0])/abs(new_y[0]))*100
+											if abs(new_y[1]) != 0:
+												this_differ = ((price2-new_y[1])/abs(new_y[1]))*100
+												high_this_differ = ((high_price2-new_y[1])/abs(new_y[1]))*100
+												low_this_differ = ((low_price2-new_y[1])/abs(new_y[1]))*100
+											else:
+												this_differ = 0.0
+												high_this_differ = 0.0
+												low_this_differ = 0.0
+											if abs(new_y[0]) != 0:
+												this_diff = ((price2-new_y[0])/abs(new_y[0]))*100
+												high_this_diff = ((high_price2-new_y[0])/abs(new_y[0]))*100
+												low_this_diff = ((low_price2-new_y[0])/abs(new_y[0]))*100
+											else:
+												this_diff = 0.0
+												high_this_diff = 0.0
+												low_this_diff = 0.0
 											difference_list = []
 											list_of_predictions = all_predictions
 											close_enough_counter = []
@@ -1487,10 +1499,18 @@ while True:
 												current_prediction_price = all_predictions[highlowind][which_candle_of_the_prediction_index]
 												high_current_prediction_price = high_all_predictions[highlowind][which_candle_of_the_prediction_index]
 												low_current_prediction_price = low_all_predictions[highlowind][which_candle_of_the_prediction_index]
-												perc_diff_now = ((current_prediction_price-new_y[0])/abs(new_y[0]))*100
-												perc_diff_now_actual = ((price2-new_y[0])/abs(new_y[0]))*100
-												high_perc_diff_now_actual = ((high_price2-new_y[0])/abs(new_y[0]))*100
-												low_perc_diff_now_actual = ((low_price2-new_y[0])/abs(new_y[0]))*100
+												if abs(new_y[0]) != 0:
+													perc_diff_now = ((current_prediction_price-new_y[0])/abs(new_y[0]))*100
+													perc_diff_now_actual = ((price2-new_y[0])/abs(new_y[0]))*100
+													high_perc_diff_now_actual = ((high_price2-new_y[0])/abs(new_y[0]))*100
+												else:
+													perc_diff_now = 0.0
+													perc_diff_now_actual = 0.0
+													high_perc_diff_now_actual = 0.0
+												if abs(new_y[0]) != 0:
+													low_perc_diff_now_actual = ((low_price2-new_y[0])/abs(new_y[0]))*100
+												else:
+													low_perc_diff_now_actual = 0.0
 												try:
 													difference = abs((abs(current_prediction_price-float(price2))/((current_prediction_price+float(price2))/2))*100)
 												except Exception:
@@ -1546,12 +1566,9 @@ while True:
 																	pass
 															else:
 																new_weight = move_weights[indy]
-															del weight_list[perfect_dexs[indy]]
-															weight_list.insert(perfect_dexs[indy],new_weight)
-															del high_weight_list[perfect_dexs[indy]]
-															high_weight_list.insert(perfect_dexs[indy],high_new_weight)
-															del low_weight_list[perfect_dexs[indy]]
-															low_weight_list.insert(perfect_dexs[indy],low_new_weight)
+															weight_list[perfect_dexs[indy]] = new_weight
+															high_weight_list[perfect_dexs[indy]] = high_new_weight
+															low_weight_list[perfect_dexs[indy]] = low_new_weight
 
 															# mark dirty (we will flush in batches)
 															_mem = load_memory(tf_choice)
@@ -1594,20 +1611,17 @@ while True:
 													continue
 										except Exception:
 											PrintException()
-											while True:
-												continue
+											pass
 									if which_candle_of_the_prediction_index >= candles_to_predict:
 										break
 									else:
 										continue
 								except Exception:
 									PrintException()
-									while True:
-										continue
+									pass
 							except Exception:
 								PrintException()
-								while True:
-									continue
+								pass
 					else:
 						pass
 					coin_choice_index += 1
@@ -1617,8 +1631,7 @@ while True:
 					break
 				except Exception:
 					PrintException()
-					while True:
-						continue
+					pass
 			if restarting == 'yes':
 				break
 			else:

@@ -1432,7 +1432,7 @@ class CryptoAPITrading:
                 self.cost_basis = new_cost_basis
                 print("Cost basis recalculated successfully.")
             else:
-                print("Failed to recalculcate cost basis.")
+                print("Failed to recalculate cost basis.")
             self.initialize_dca_levels()
 
         # --- GUI HUB STATUS WRITE ---
