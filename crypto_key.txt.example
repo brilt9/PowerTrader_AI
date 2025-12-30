@@ -1,8 +1,0 @@
-your_cryptocom_api_key_here
-
-# Instructions:
-# 1. Rename this file to: crypto_key.txt
-# 2. Replace the text above with your actual Crypto.com Exchange API Key
-# 3. Get your API key from: https://crypto.com/exchange (Settings → API Keys)
-# 4. Make sure to set file permissions: chmod 600 crypto_key.txt (Linux/Mac)
-# 5. NEVER commit the actual crypto_key.txt file to version control!

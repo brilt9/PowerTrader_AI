@@ -1,168 +1,140 @@
-# PowerTrader_AI
-Fully automated crypto trading powered by a custom price prediction AI and a structured/tiered DCA system.
+# PowerTrader AI
 
-## 🔄 **CRYPTO.COM EXCHANGE API**
+Automated crypto trading bot with AI-powered price prediction and DCA (Dollar-Cost Averaging) system.
 
-**This version uses the Crypto.com Exchange API** for both market data and trading.
-
-📚 **See**: `CRYPTO_COM_MIGRATION_GUIDE.md` for full API details
-
-# Setup & First-Time Use (Windows)
-
-THESE INSTRUCTIONS WERE WRITTEN BY AI! PLEASE LET ME KNOW IF THERE ARE ANY ERRORS OR ISSUES WITH THIS SETUP PROCESS!
-
-This page walks you through installing PowerTrader AI from start to finish, in the exact order a first-time user should do it.  
-No coding knowledge needed.  
-These instructions are Windows-based but PowerTrader AI can run on any OS.
-
-**Important:** This software can place trades automatically. You are responsible for what it does.  
-Keep your API keys private. We are not giving financial advice. We are not responsible for any losses incurred. You are fully responsible for doing your own due diligence to learn and understand this trading system and to use it properly. You are fully responsible for all of your money, and any gains or losses.
+Uses **Crypto.com Exchange API** for trading.
 
 ---
 
-## Step 1 — Install Python
+## Quick Start Guide
 
-1. Go to **python.org** and download Python for Windows.
-2. Run the installer.
-3. **Check the box** that says: **“Add Python to PATH”**.
-4. Click **Install Now**.
+### Step 1: Install Python
 
----
+1. Download Python from **python.org**
+2. Run installer
+3. **Check "Add Python to PATH"** during installation
+4. Click Install
 
-## Step 2 — Download PowerTrader AI
+### Step 2: Download PowerTrader AI
 
-1. On the PowerTrader AI GitHub page, click **Code** → **Download ZIP**.
-2. Extract the ZIP somewhere simple, like: `C:\PowerTraderAI\`
+1. Download this repository as ZIP
+2. Extract to a folder (e.g., `C:\PowerTrader_AI`)
 
----
+### Step 3: Open Command Prompt
 
-## Step 3 — Install PowerTrader AI (one command)
+1. Press **Windows Key + R**
+2. Type `cmd` and press Enter
+3. Navigate to the PowerTrader folder:
+   ```
+   cd C:\PowerTrader_AI
+   ```
 
-1. Open **Command Prompt** (Windows key → type **cmd** → Enter).
-2. Go into your PowerTrader AI folder. Example:
+### Step 4: Install Dependencies
 
-   `cd C:\PowerTraderAI`
+Run this command:
+```
+pip install -r requirements.txt
+```
 
-3. Install everything PowerTrader AI needs:
+### Step 5: Get Crypto.com API Keys
 
-   `python -m pip install -r requirements.txt`
-
----
-
-## Step 4 — Start PowerTrader AI
-
-From the same Command Prompt window (inside your PowerTrader folder), run:
-
-`python pt_hub.py`
-
-The app that opens is the **PowerTrader Hub**.  
-This is the only thing you need to run day-to-day.
-
----
-
-## Step 5 — Set your folder, coins, and Crypto.com Exchange API keys
-
-### Open Settings
-
-In the Hub, open **Settings** and do this in order:
-
-- **Main Neural Folder**: set this to the same folder that contains `pt_hub.py` (recommended easiest).
-- **Choose which coins to trade**: start with **BTC**.
-
-### Get Crypto.com Exchange API Keys
-
-1. **Create Account**: Go to https://crypto.com/exchange and complete KYC verification
-2. **Enable 2FA**: Set up two-factor authentication for security
-3. **Generate API Keys**:
-   - Navigate to **Settings** → **API Keys**
-   - Click **+ Create API Key**
-   - Set permissions: **Read** ✓ and **Trade** ✓
-   - **Whitelist your IP address** (REQUIRED - see below)
-   - Save the **API Key** and **Secret Key** securely
-
-4. **Whitelist Your IP Address** (REQUIRED):
+1. Go to **https://crypto.com/exchange**
+2. Create account and complete verification
+3. Go to **Settings > API Keys**
+4. Click **Create API Key**
+5. Enable: **Read** and **Trade** permissions
+6. **Add your IP address** to whitelist (required):
    - Go to https://www.whatismyip.com to find your IP
-   - Add your IP to the API key's whitelist in Crypto.com Exchange
-   - 📖 See [IP_WHITELIST_GUIDE.md](IP_WHITELIST_GUIDE.md) for detailed instructions
+   - Add it to the API key whitelist
 
-### Configure PowerTrader AI
+### Step 6: Configure API Keys
 
-Create two text files in your PowerTrader AI folder:
+Create two files in the PowerTrader folder:
 
-**crypto_key.txt**:
+**crypto_key.txt** - paste your API key
+
+**crypto_secret.txt** - paste your secret key
+
+### Step 7: Train the AI
+
 ```
-your_api_key_here
-```
-
-**crypto_secret.txt**:
-```
-your_secret_key_here
-```
-
-**IMPORTANT**: Keep these files private! Set proper permissions:
-```bash
-# On Linux/Mac
-chmod 600 crypto_key.txt crypto_secret.txt
+python pt_trainer.py BTC
 ```
 
-After creating these files, you're ready to use PowerTrader AI with Crypto.com Exchange.
+Wait for training to complete.
 
-PowerTrader AI uses a simple folder style:  
-**BTC uses the main folder**, and other coins use their own subfolders (like `ETH\`).
+### Step 8: Start Trading
+
+```
+python pt_hub.py
+```
+
+In the GUI:
+1. Click **Scripts > Start All**
 
 ---
 
-## Step 6 — Train (inside the Hub)
+## Files
 
-Training builds the system’s coin “memory” so it can generate signals.
-
-1. In the Hub, click **Train All**.
-2. Wait until training finishes.
-
----
-
-## Step 7 — Start the system (inside the Hub)
-
-When training is done, click:
-
-1. **Start All**
-
-The Hub will:  
-**start pt_thinker.py**, wait until it is ready, then it will **start trader.py**.  
-You don’t need to manually start separate programs. The hub handles everything!
+| File | Purpose |
+|------|---------|
+| `pt_hub.py` | Main GUI application |
+| `pt_thinker.py` | AI signal generation |
+| `pt_trader.py` | Trade execution |
+| `pt_trainer.py` | AI model training |
+| `cryptocom_api.py` | Crypto.com API wrapper |
 
 ---
 
-## Neural Levels (the LONG/SHORT numbers)
+## Trading Logic
 
-- These are signal strength levels from low to high.
-- Higher number = stronger signal.
-- LONG = buy-direction signal. SHORT = sell-direction signal.
-
-A TRADE WILL START FOR A COIN IF THAT COIN REACHES A LONG LEVEL OF 3 OR HIGHER WHILE HAVING A SHORT LEVEL OF 0!
+- **LONG signal 3+**: Opens new trade
+- **DCA levels**: Buys more at lower prices (-2.5%, -5%, -10%, etc.)
+- **Trailing profit**: Sells when price drops 0.5% from peak profit
 
 ---
 
-## Adding more coins (later)
+## Commands
 
-1. Open **Settings**
-2. Add one new coin
-3. Save
-4. Click **Train All**, wait for training to complete
-5. Click **Start All**
+Train a coin:
+```
+python pt_trainer.py BTC
+python pt_trainer.py ETH
+```
+
+Start the GUI:
+```
+python pt_hub.py
+```
+
+Test API connection:
+```
+python test_api_connection.py
+```
 
 ---
 
-## Donate
+## Troubleshooting
 
-PowerTrader AI is COMPLETELY free and open source! If you want to support the project:
+**API not working?**
+- Check your IP is whitelisted at Crypto.com
+- Verify `crypto_key.txt` and `crypto_secret.txt` have no extra spaces
 
-- Cash App: **$garagesteve**
-- PayPal: **@garagesteve**
-- Patreon: **patreon.com/MakingMadeEasy**
+**Trades not starting?**
+- Neural signal must reach level 3+
+- Run trainer first: `python pt_trainer.py BTC`
+
+---
+
+## Important
+
+- This software trades real money - use at your own risk
+- Start with small amounts to test
+- Keep your API keys private
+- You are responsible for all trading decisions
 
 ---
 
 ## License
 
-PowerTrader AI is released under the **Apache 2.0** license.
+Apache 2.0
