@@ -93,7 +93,11 @@ def generate_signature(params, api_secret, timestamp):
 3. Set permissions:
    - ✅ Read
    - ✅ Trade
-4. Save the **API Key** and **Secret Key**
+4. **Whitelist your IP address** (REQUIRED):
+   - Find your IP: https://www.whatismyip.com
+   - Add it to the IP Whitelist field
+   - 📖 See [IP_WHITELIST_GUIDE.md](IP_WHITELIST_GUIDE.md) for details
+5. Save the **API Key** and **Secret Key**
 
 ### 3. Configure PowerTrader_AI
 
