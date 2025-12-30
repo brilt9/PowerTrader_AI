@@ -2,8 +2,3 @@ requests
 psutil
 matplotlib
 colorama
-cryptography
-PyNaCl
-cryptocom-exchange>=0.15.0
-aiohttp
-websockets
